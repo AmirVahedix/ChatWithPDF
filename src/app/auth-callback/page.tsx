@@ -1,5 +1,7 @@
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/router";
+"use client";
+
+import { useSearchParams, useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { trpc } from "../_trpc/client";
 
 const AuthCallbackPage = () => {
@@ -18,11 +20,19 @@ const AuthCallbackPage = () => {
         router.push("/sign-in");
       }
     },
-    retry: true,
+    retry: 3,
     retryDelay: 500,
   });
 
-  return <div>AuthCallbackPage</div>;
+  return (
+    <div className="w-full mt-24 flex justify-center">
+      <div className="flex flex-col items-center gap-2">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-800" />
+        <h3 className="font-semibold text-xl">Setting up your account...</h3>
+        <p>You will be redirected automatilcally.</p>
+      </div>
+    </div>
+  );
 };
 
 export default AuthCallbackPage;
