@@ -5,14 +5,34 @@ import { Cloud, File } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const UploadDropzone = () => {
-  const [isUploading, setIsUploading] = useState<boolean>(true);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+
+  const startStimulateProgress = () => {
+    setUploadProgress(0);
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 5;
+      });
+    }, 500);
+    return interval;
+  };
 
   return (
     <Dropzone
       multiple={false}
-      onDrop={(acceptedFiles) => {
-        console.log(acceptedFiles);
+      onDrop={async (acceptedFiles) => {
+        setIsUploading(true);
+        const progressInterval = startStimulateProgress();
+
+        // handle file uploading
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
       }}
     >
       {({ getRootProps, getInputProps, acceptedFiles }) => (
@@ -47,7 +67,10 @@ const UploadDropzone = () => {
 
               {isUploading ? (
                 <div className="w-full mt-4 max-w-xs mx-auto">
-                  <Progress value={50} className="h-1 w-full bg-zinc-200" />
+                  <Progress
+                    value={uploadProgress}
+                    className="h-1 w-full bg-zinc-200"
+                  />
                 </div>
               ) : null}
             </label>
