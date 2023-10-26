@@ -6,12 +6,19 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { useResizeDetector } from "react-resize-detector";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Simplebar from "simplebar-react";
 
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "../ui/dropdown-menu";
 
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -28,6 +35,7 @@ const PdfRenderer = ({ url }: Props) => {
 
   const [numPages, setNumPages] = useState<number>();
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [scale, setScale] = useState<number>(1);
 
   const CustomPageValidator = z.object({
     page: z
@@ -130,21 +138,55 @@ const PdfRenderer = ({ url }: Props) => {
             <ChevronDown className="h-4 w-4" />
           </Button>
         </div>
+
+        <div className="space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-1.5" aria-label="zoom" variant="ghost">
+                <Search className="h-4 w-4" />
+                {scale * 100}% <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => setScale(1)}>
+                100%
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setScale(1.25)}>
+                125%
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setScale(1.5)}>
+                150%
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setScale(1.75)}>
+                175%
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setScale(2)}>
+                200%
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="flex-1 w-full max-h-screen">
-        <div ref={ref}>
-          <Document
-            loading={onLoading}
-            onLoadError={onError}
-            onLoadSuccess={({ numPages }) => {
-              setNumPages(numPages);
-            }}
-            file={url}
-            className="max-h-full"
-          >
-            <Page width={width ? width : 1} pageNumber={currentPage} />
-          </Document>
-        </div>
+        <Simplebar autoHide={false} className="max-h-[calc(100vh-10rem)]">
+          <div ref={ref}>
+            <Document
+              loading={onLoading}
+              onLoadError={onError}
+              onLoadSuccess={({ numPages }) => {
+                setNumPages(numPages);
+              }}
+              file={url}
+              className="max-h-full"
+            >
+              <Page
+                width={width ? width : 1}
+                pageNumber={currentPage}
+                scale={scale}
+              />
+            </Document>
+          </div>
+        </Simplebar>
       </div>
     </div>
   );
