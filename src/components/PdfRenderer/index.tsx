@@ -1,15 +1,20 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { useToast } from "@/components/ui/use-toast";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
 import { useResizeDetector } from "react-resize-detector";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { useState } from "react";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -23,6 +28,55 @@ const PdfRenderer = ({ url }: Props) => {
 
   const [numPages, setNumPages] = useState<number>();
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const CustomPageValidator = z.object({
+    page: z
+      .string()
+      .refine((num) => Number(num) > 0 && Number(num) <= numPages!),
+  });
+
+  type TCustomPageValidator = z.infer<typeof CustomPageValidator>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<TCustomPageValidator>({
+    defaultValues: {
+      page: "1",
+    },
+    resolver: zodResolver(CustomPageValidator),
+  });
+
+  const handlePageSubmit = ({ page }: TCustomPageValidator) => {
+    setCurrentPage(Number(page));
+    setValue("page", String(page));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => {
+      if (prev + 1 > numPages!) {
+        setValue("page", String(numPages));
+        return numPages!;
+      } else {
+        setValue("page", String(prev + 1));
+        return prev + 1;
+      }
+    });
+  };
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => {
+      if (prev - 1 > 1) {
+        setValue("page", String(prev - 1));
+        return prev - 1;
+      } else {
+        setValue("page", String(1));
+        return 1;
+      }
+    });
+  };
 
   const onError = () =>
     toast({
@@ -45,14 +99,23 @@ const PdfRenderer = ({ url }: Props) => {
             variant="ghost"
             aria-label="previous page"
             disabled={currentPage <= 1}
-            onClick={() =>
-              setCurrentPage((prev) => (prev - 1 > 1 ? prev - 1 : 1))
-            }
+            onClick={handlePreviousPage}
           >
             <ChevronUp className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-1.5">
-            <Input className="w-12 h-8 " />
+            <Input
+              {...register("page")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSubmit(handlePageSubmit)();
+                }
+              }}
+              className={cn(
+                "w-12 h-8",
+                errors.page && "focus-visible:ring-red-500"
+              )}
+            />
             <p className="text-zinc-700 text-sm space-x-1">
               <span>/</span>
               <span>{numPages ?? "x"}</span>
@@ -62,11 +125,7 @@ const PdfRenderer = ({ url }: Props) => {
             variant="ghost"
             aria-label="next page"
             disabled={numPages === undefined || currentPage === numPages}
-            onClick={() =>
-              setCurrentPage((prev) =>
-                prev + 1 > numPages! ? numPages! : prev + 1
-              )
-            }
+            onClick={handleNextPage}
           >
             <ChevronDown className="h-4 w-4" />
           </Button>
