@@ -2,11 +2,16 @@ import { useState } from "react";
 import Dropzone from "react-dropzone";
 import { Cloud, File } from "lucide-react";
 
+import { useUploadThing } from "@/lib/uploadthing";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
 
 const UploadDropzone = () => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const { toast } = useToast();
+
+  const { startUpload } = useUploadThing("pdfUploader");
 
   const startStimulateProgress = () => {
     setUploadProgress(0);
@@ -29,7 +34,26 @@ const UploadDropzone = () => {
         setIsUploading(true);
         const progressInterval = startStimulateProgress();
 
-        // handle file uploading
+        const res = await startUpload(acceptedFiles);
+
+        if (!res) {
+          return toast({
+            title: "Something went wrong",
+            description: "Please try again later",
+            variant: "destructive",
+          });
+        }
+
+        const [fileReponse] = res;
+        const key = fileReponse?.key;
+
+        if (!key) {
+          return toast({
+            title: "Something went wrong",
+            description: "Please try again later",
+            variant: "destructive",
+          });
+        }
 
         clearInterval(progressInterval);
         setUploadProgress(100);
