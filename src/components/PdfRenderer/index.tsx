@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  RotateCcw,
   RotateCw,
   Search,
 } from "lucide-react";
@@ -29,6 +28,7 @@ import {
 
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import PdfFullScreen from "./PdfFullScreen";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -180,6 +180,7 @@ const PdfRenderer = ({ url }: Props) => {
           >
             <RotateCw className="h-4 w-4" />
           </Button>
+          <PdfFullScreen fileUrl={url} />
         </div>
       </div>
       <div className="flex-1 w-full max-h-screen">
