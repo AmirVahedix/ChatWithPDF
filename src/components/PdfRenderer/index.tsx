@@ -9,7 +9,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Simplebar from "simplebar-react";
 
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, Loader2, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  RotateCcw,
+  RotateCw,
+  Search,
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +43,7 @@ const PdfRenderer = ({ url }: Props) => {
   const [numPages, setNumPages] = useState<number>();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [scale, setScale] = useState<number>(1);
+  const [rotation, setRotation] = useState<number>(0);
 
   const CustomPageValidator = z.object({
     page: z
@@ -165,6 +173,13 @@ const PdfRenderer = ({ url }: Props) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button
+            onClick={() => setRotation((prev) => prev + 90)}
+            variant="ghost"
+            aria-label="rotate 90 degrees clockwise"
+          >
+            <RotateCw className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       <div className="flex-1 w-full max-h-screen">
@@ -183,6 +198,7 @@ const PdfRenderer = ({ url }: Props) => {
                 width={width ? width : 1}
                 pageNumber={currentPage}
                 scale={scale}
+                rotate={rotation}
               />
             </Document>
           </div>
