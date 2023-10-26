@@ -1,17 +1,29 @@
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Dropzone from "react-dropzone";
-import { Cloud, File } from "lucide-react";
+import { Cloud, File as FileIcon } from "lucide-react";
 
 import { useUploadThing } from "@/lib/uploadthing";
+import { trpc } from "@/app/_trpc/client";
+
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 
 const UploadDropzone = () => {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { startUpload } = useUploadThing("pdfUploader");
+
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const { toast } = useToast();
 
-  const { startUpload } = useUploadThing("pdfUploader");
+  const { mutate: startPolling } = trpc.getFile.useMutation({
+    onSuccess: (file) => {
+      router.push(`/dashboard/${file.id}`);
+    },
+    retry: true,
+    retryDelay: 2000,
+  });
 
   const startStimulateProgress = () => {
     setUploadProgress(0);
@@ -27,38 +39,39 @@ const UploadDropzone = () => {
     return interval;
   };
 
+  const onDropHandler = async <T extends File>(acceptedFiles: T[]) => {
+    setIsUploading(true);
+    const progressInterval = startStimulateProgress();
+
+    const res = await startUpload(acceptedFiles);
+
+    if (!res) {
+      return toast({
+        title: "Something went wrong",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
+
+    const [fileReponse] = res;
+    const key = fileReponse?.key;
+
+    if (!key) {
+      return toast({
+        title: "Something went wrong",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
+
+    clearInterval(progressInterval);
+    setUploadProgress(100);
+
+    startPolling({ key });
+  };
+
   return (
-    <Dropzone
-      multiple={false}
-      onDrop={async (acceptedFiles) => {
-        setIsUploading(true);
-        const progressInterval = startStimulateProgress();
-
-        const res = await startUpload(acceptedFiles);
-
-        if (!res) {
-          return toast({
-            title: "Something went wrong",
-            description: "Please try again later",
-            variant: "destructive",
-          });
-        }
-
-        const [fileReponse] = res;
-        const key = fileReponse?.key;
-
-        if (!key) {
-          return toast({
-            title: "Something went wrong",
-            description: "Please try again later",
-            variant: "destructive",
-          });
-        }
-
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-      }}
-    >
+    <Dropzone multiple={false} onDrop={onDropHandler}>
       {({ getRootProps, getInputProps, acceptedFiles }) => (
         <div
           {...getRootProps()}
@@ -81,7 +94,7 @@ const UploadDropzone = () => {
               {acceptedFiles && acceptedFiles[0] ? (
                 <div className="max-w-xs bg-white flex items-center rounded-md overflow-hidden outline-[1px] outline-zinc-200 divide-x divide-zinc-200">
                   <div className="px-3 py-2 h-full grid place-items-center">
-                    <File className="h-4 w-4 text-blue-500" />
+                    <FileIcon className="h-4 w-4 text-blue-500" />
                   </div>
                   <div className="px-3 py-2 h-full text-sm truncate">
                     {acceptedFiles[0].name}
@@ -97,6 +110,13 @@ const UploadDropzone = () => {
                   />
                 </div>
               ) : null}
+
+              <input
+                {...getInputProps()}
+                type="file"
+                id="dropzone-file"
+                className="hidden"
+              />
             </label>
           </div>
         </div>
