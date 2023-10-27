@@ -1,5 +1,8 @@
+type Props = {
+  isDisabled?: boolean
+}
 
-const ChatInput = () => {
+const ChatInput = ({isDisabled}: Props) => {
   return (
     <div>ChatInput</div>
   )
